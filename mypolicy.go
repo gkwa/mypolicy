@@ -5,14 +5,49 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"time"
+)
+
+var replace func([]string, slog.Attr) slog.Attr
+
+// HandlerType enum for handler types
+type HandlerType string
+
+const (
+	TextHandler HandlerType = "text"
+	JsonHandler HandlerType = "json"
 )
 
 func Main() int {
 	slog.Debug("mypolicy", "test", true)
 
-	logger := makeLog(os.Stderr, slog.LevelInfo)
+	var logger *slog.Logger
 
+	// text handler
+	logger = MakeLogger(os.Stderr, slog.LevelInfo, TextHandler)
+	logger.Info("Hello World!")
+	logger.Error("Hello World!")
+
+	slog.Info("Hello World!")
+	slog.Error("Hello World!")
+
+	slog.SetDefault(logger)
+	slog.Info("Hello World!")
+	slog.Error("Hello World!")
+
+	// json handler
+	logger = MakeLogger(os.Stderr, slog.LevelInfo, JsonHandler)
+	logger.Info("Hello World!")
+	logger.Error("Hello World!")
+
+	slog.Info("Hello World!")
+	slog.Error("Hello World!")
+
+	slog.SetDefault(logger)
+	slog.Info("Hello World!")
+	slog.Error("Hello World!")
+
+	// defaults to text handler
+	logger = MakeLogger(os.Stderr, slog.LevelInfo)
 	logger.Info("Hello World!")
 	logger.Error("Hello World!")
 
@@ -33,21 +68,7 @@ func setPartialPath(source *slog.Source) {
 	source.File = filepath.Join(parentDir, fileName)
 }
 
-func makeLog(w io.Writer, level slog.Level) *slog.Logger {
-	var replace func([]string, slog.Attr) slog.Attr
-
-	replace = func(_ []string, a slog.Attr) slog.Attr {
-		if a.Key == "source" {
-			src := a.Value.Any().(*slog.Source)
-			return slog.String("source", src.File)
-		}
-		if a.Key == "time" {
-			t := a.Value.Time()
-			return slog.String("time", t.Format(time.Kitchen))
-		}
-		return a
-	}
-
+func init() {
 	replace = func(groups []string, a slog.Attr) slog.Attr {
 		if a.Key == slog.TimeKey && len(groups) == 0 {
 			return slog.Attr{}
@@ -60,14 +81,33 @@ func makeLog(w io.Writer, level slog.Level) *slog.Logger {
 		}
 		return a
 	}
+}
 
-	opts := slog.HandlerOptions{
+func makeHandlerOptions(level slog.Level) slog.HandlerOptions {
+	return slog.HandlerOptions{
 		AddSource:   true,
 		Level:       &level,
 		ReplaceAttr: replace,
 	}
+}
 
-	handler := slog.NewTextHandler(os.Stderr, &opts)
+func MakeLogger(w io.Writer, level slog.Level, handlerType ...HandlerType) *slog.Logger {
+	opts := makeHandlerOptions(level)
+
+	var handler slog.Handler
+	if len(handlerType) == 0 {
+		handler = slog.NewTextHandler(w, &opts)
+	} else {
+		switch handlerType[0] {
+		case "text":
+			handler = slog.NewTextHandler(w, &opts)
+		case "json":
+			handler = slog.NewJSONHandler(w, &opts)
+		default:
+			handler = slog.NewTextHandler(w, &opts)
+		}
+	}
+
 	logger := slog.New(handler)
 	return logger
 }
