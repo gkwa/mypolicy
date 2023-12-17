@@ -1,0 +1,38 @@
+#+begin_example
+slog.Debug("mypolicy", "test", true)
+
+logger := makeLog(os.Stderr, slog.LevelInfo)
+
+logger.Info("Hello World!")
+logger.Error("Hello World!")
+
+slog.Info("Hello World!")
+slog.Error("Hello World!")
+
+slog.SetDefault(logger)
+slog.Info("Hello World!")
+slog.Error("Hello World!")
+#+end_example
+
+log level debug:
+#+begin_example
+./mypolicy --verbose
+level=DEBUG source=mypolicy/mypolicy.go:12 msg=mypolicy test=true
+level=INFO source=mypolicy/mypolicy.go:16 msg="Hello World!"
+level=ERROR source=mypolicy/mypolicy.go:17 msg="Hello World!"
+level=INFO source=mypolicy/mypolicy.go:19 msg="Hello World!"
+level=ERROR source=mypolicy/mypolicy.go:20 msg="Hello World!"
+level=INFO source=mypolicy/mypolicy.go:23 msg="Hello World!"
+level=ERROR source=mypolicy/mypolicy.go:24 msg="Hello World!"
+#+end_example
+
+log level info:
+#+begin_example
+./mypolicy
+level=INFO source=mypolicy/mypolicy.go:16 msg="Hello World!"
+level=ERROR source=mypolicy/mypolicy.go:17 msg="Hello World!"
+2023/12/16 21:47:39 INFO Hello World!
+2023/12/16 21:47:39 ERROR Hello World!
+level=INFO source=mypolicy/mypolicy.go:23 msg="Hello World!"
+level=ERROR source=mypolicy/mypolicy.go:24 msg="Hello World!"
+#+end_example
